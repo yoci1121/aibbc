@@ -37,7 +37,7 @@ export default function ShiftCalendar({
         <table className="w-full border-collapse text-xs">
           <thead>
             <tr className="bg-gray-50">
-              <th className="sticky left-0 z-10 bg-gray-50 text-left px-3 py-2 font-semibold text-gray-700 border-b border-r border-gray-200 min-w-[80px]">
+              <th className="sticky left-0 z-10 bg-gray-50 text-left px-3 py-2 font-semibold text-gray-700 border-b border-r border-gray-200 min-w-[100px]">
                 日付
               </th>
               {staff.map((s) => (
@@ -81,21 +81,36 @@ export default function ShiftCalendar({
                     </div>
                   </td>
                   {staff.map((s) => {
-                    const patId = shiftData[s.id]?.[dateStr] ?? "";
-                    const pat = patternMap[patId];
+                    const slot = shiftData[s.id]?.[dateStr];
+                    const pat = slot ? patternMap[slot.patternId] : undefined;
+                    const confirmed = slot?.confirmed ?? false;
+
                     return (
                       <td
                         key={s.id}
                         className={`px-1 py-1 border-b border-r border-gray-100 text-center ${isClosed ? "opacity-30" : "cursor-pointer"}`}
                         onClick={() => !isClosed && onCellClick?.(s.id, dateStr)}
-                        title={isClosed ? closedLabel : pat ? `${pat.name}${pat.startTime ? ` ${pat.startTime}〜${pat.endTime}` : ""}` : ""}
+                        title={
+                          isClosed
+                            ? closedLabel
+                            : pat
+                            ? `${confirmed ? "確定" : "仮"}: ${pat.name}${pat.startTime ? ` ${pat.startTime}〜${pat.endTime}` : ""}`
+                            : ""
+                        }
                       >
                         {pat ? (
-                          <span
-                            className={`inline-flex items-center justify-center w-8 h-7 rounded text-xs font-bold ${pat.bgColor} ${pat.color}`}
-                          >
-                            {pat.label}
-                          </span>
+                          <div className="relative inline-flex items-center justify-center">
+                            <span
+                              className={`inline-flex items-center justify-center w-8 h-7 rounded text-xs font-bold ${pat.bgColor} ${pat.color} ${confirmed ? "" : "opacity-50"}`}
+                            >
+                              {pat.label}
+                            </span>
+                            {!confirmed && (
+                              <span className="absolute -top-1 -right-1 text-[8px] bg-gray-400 text-white rounded-full w-3.5 h-3.5 flex items-center justify-center leading-none font-bold">
+                                仮
+                              </span>
+                            )}
+                          </div>
                         ) : (
                           <span className="inline-flex items-center justify-center w-8 h-7 rounded text-xs text-gray-300">
                             ー

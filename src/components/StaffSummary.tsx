@@ -20,9 +20,9 @@ export default function StaffSummary({ year, month, staff, patterns, shiftData }
 
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-      const patId = shiftData[s.id]?.[dateStr];
-      if (!patId) continue;
-      const pat = patternMap[patId];
+      const slot = shiftData[s.id]?.[dateStr];
+      if (!slot) continue;
+      const pat = patternMap[slot.patternId];
       if (!pat) continue;
 
       if (pat.id === "off") {

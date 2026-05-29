@@ -103,8 +103,26 @@ export default function HolidayManager({ closedDays, onChange }: Props) {
   // 6行になるよう末尾を埋める
   while (calCells.length % 7 !== 0) calCells.push(null);
 
+  const clinicDays = daysInMonth - monthClosedDays.length;
+
   return (
     <div className="max-w-2xl mx-auto space-y-4">
+      {/* 月間診療日数サマリー */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3 text-center">
+          <div className="text-2xl font-bold text-gray-800">{daysInMonth}</div>
+          <div className="text-xs text-gray-500 mt-0.5">当月日数</div>
+        </div>
+        <div className="bg-orange-50 rounded-xl border border-orange-200 shadow-sm px-4 py-3 text-center">
+          <div className="text-2xl font-bold text-orange-600">{monthClosedDays.length}</div>
+          <div className="text-xs text-orange-500 mt-0.5">休診日数</div>
+        </div>
+        <div className="bg-indigo-50 rounded-xl border border-indigo-200 shadow-sm px-4 py-3 text-center">
+          <div className="text-2xl font-bold text-indigo-700">{clinicDays}</div>
+          <div className="text-xs text-indigo-500 mt-0.5">月間診療日数</div>
+        </div>
+      </div>
+
       {/* ヘッダー */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">

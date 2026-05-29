@@ -43,10 +43,10 @@ export default function App() {
     setEditing({ staffId, date });
   }
 
-  function handleSaveShift(staffId: string, date: string, patternId: string) {
+  function handleSaveShift(staffId: string, date: string, patternId: string, confirmed: boolean) {
     setShiftData(prev => ({
       ...prev,
-      [staffId]: { ...(prev[staffId] ?? {}), [date]: patternId },
+      [staffId]: { ...(prev[staffId] ?? {}), [date]: { patternId, confirmed } },
     }));
   }
 
@@ -63,6 +63,11 @@ export default function App() {
   }
 
   const showMonthNav = tab === "calendar" || tab === "summary";
+
+  const ym = `${year}-${String(month).padStart(2, "0")}`;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const closedCount = Object.keys(closedDays).filter(d => d.startsWith(ym)).length;
+  const clinicDays = daysInMonth - closedCount;
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -117,6 +122,11 @@ export default function App() {
               {t === "staff" && (
                 <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-xs">
                   {staff.length}
+                </span>
+              )}
+              {t === "holidays" && (
+                <span className="ml-1.5 inline-flex items-center justify-center px-1.5 h-5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-medium">
+                  診{clinicDays}日
                 </span>
               )}
             </button>
@@ -193,7 +203,8 @@ export default function App() {
         <ShiftEditModal
           staffId={editing.staffId}
           date={editing.date}
-          currentPatternId={shiftData[editing.staffId]?.[editing.date] ?? ""}
+          currentPatternId={shiftData[editing.staffId]?.[editing.date]?.patternId ?? ""}
+          currentConfirmed={shiftData[editing.staffId]?.[editing.date]?.confirmed ?? false}
           staff={staff}
           patterns={patterns}
           onSave={handleSaveShift}

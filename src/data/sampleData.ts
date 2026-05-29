@@ -1,4 +1,4 @@
-import type { Staff, ShiftPattern, ShiftData } from "../types";
+import type { Staff, ShiftPattern, ShiftData, ShiftSlot } from "../types";
 
 export const STAFF_LIST: Staff[] = [
   { id: "s1", name: "田中 花子" },
@@ -61,6 +61,10 @@ export const DEFAULT_PATTERNS: ShiftPattern[] = [
   },
 ];
 
+function slot(patternId: string): ShiftSlot {
+  return { patternId, confirmed: false };
+}
+
 function makeShiftData(year: number, month: number): ShiftData {
   const daysInMonth = new Date(year, month, 0).getDate();
   const data: ShiftData = {};
@@ -72,10 +76,10 @@ function makeShiftData(year: number, month: number): ShiftData {
       const date = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
       const dow = new Date(year, month - 1, d).getDay();
       if (dow === 0 || dow === 6) {
-        data[staff.id][date] = "off";
+        data[staff.id][date] = slot("off");
       } else {
         const idx = (si + d) % 4;
-        data[staff.id][date] = patternIds[idx];
+        data[staff.id][date] = slot(patternIds[idx]);
       }
     }
   });
