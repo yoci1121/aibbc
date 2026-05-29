@@ -1,4 +1,4 @@
-import type { Staff, ShiftPattern, ShiftData } from "../types";
+import type { Staff, ShiftPattern, ShiftData, ClosedDays } from "../types";
 
 interface Props {
   year: number;
@@ -6,6 +6,7 @@ interface Props {
   staff: Staff[];
   patterns: ShiftPattern[];
   shiftData: ShiftData;
+  closedDays?: ClosedDays;
   onCellClick?: (staffId: string, date: string) => void;
 }
 
@@ -17,6 +18,7 @@ export default function ShiftCalendar({
   staff,
   patterns,
   shiftData,
+  closedDays = {},
   onCellClick,
 }: Props) {
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -54,7 +56,11 @@ export default function ShiftCalendar({
             {days.map(({ d, dateStr, dow }) => {
               const isSun = dow === 0;
               const isSat = dow === 6;
-              const rowBg = isSun
+              const isClosed = closedDays[dateStr] !== undefined;
+              const closedLabel = closedDays[dateStr] || "休診";
+              const rowBg = isClosed
+                ? "bg-orange-50"
+                : isSun
                 ? "bg-red-50"
                 : isSat
                 ? "bg-blue-50"
@@ -63,9 +69,16 @@ export default function ShiftCalendar({
               return (
                 <tr key={dateStr} className={`${rowBg} hover:brightness-95`}>
                   <td className={`sticky left-0 z-10 ${rowBg} px-3 py-1 border-b border-r border-gray-100 font-medium`}>
-                    <span className={isSun ? "text-red-600" : isSat ? "text-blue-600" : "text-gray-700"}>
-                      {month}/{d}（{DOW_LABELS[dow]}）
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className={isClosed ? "text-orange-600" : isSun ? "text-red-600" : isSat ? "text-blue-600" : "text-gray-700"}>
+                        {month}/{d}（{DOW_LABELS[dow]}）
+                      </span>
+                      {isClosed && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-400 text-white leading-none">
+                          {closedLabel}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   {staff.map((s) => {
                     const patId = shiftData[s.id]?.[dateStr] ?? "";
@@ -73,9 +86,9 @@ export default function ShiftCalendar({
                     return (
                       <td
                         key={s.id}
-                        className="px-1 py-1 border-b border-r border-gray-100 text-center cursor-pointer"
-                        onClick={() => onCellClick?.(s.id, dateStr)}
-                        title={pat ? `${pat.name}${pat.startTime ? ` ${pat.startTime}〜${pat.endTime}` : ""}` : ""}
+                        className={`px-1 py-1 border-b border-r border-gray-100 text-center ${isClosed ? "opacity-30" : "cursor-pointer"}`}
+                        onClick={() => !isClosed && onCellClick?.(s.id, dateStr)}
+                        title={isClosed ? closedLabel : pat ? `${pat.name}${pat.startTime ? ` ${pat.startTime}〜${pat.endTime}` : ""}` : ""}
                       >
                         {pat ? (
                           <span

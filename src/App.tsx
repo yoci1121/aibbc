@@ -4,16 +4,18 @@ import ShiftPatternEditor from "./components/ShiftPatternEditor";
 import StaffSummary from "./components/StaffSummary";
 import ShiftEditModal from "./components/ShiftEditModal";
 import StaffManager from "./components/StaffManager";
+import HolidayManager from "./components/HolidayManager";
 import { STAFF_LIST, DEFAULT_PATTERNS, SAMPLE_SHIFT_DATA } from "./data/sampleData";
-import type { Staff, ShiftPattern, ShiftData } from "./types";
+import type { Staff, ShiftPattern, ShiftData, ClosedDays } from "./types";
 
-type Tab = "calendar" | "summary" | "patterns" | "staff";
+type Tab = "calendar" | "summary" | "patterns" | "staff" | "holidays";
 
 const TAB_LABELS: Record<Tab, string> = {
   calendar: "カレンダー",
   summary: "勤務集計",
   patterns: "パターン設定",
   staff: "スタッフ管理",
+  holidays: "休診日設定",
 };
 
 export default function App() {
@@ -23,6 +25,7 @@ export default function App() {
   const [staff, setStaff] = useState<Staff[]>(STAFF_LIST);
   const [patterns, setPatterns] = useState<ShiftPattern[]>(DEFAULT_PATTERNS);
   const [shiftData, setShiftData] = useState<ShiftData>(SAMPLE_SHIFT_DATA);
+  const [closedDays, setClosedDays] = useState<ClosedDays>({});
   const [tab, setTab] = useState<Tab>("calendar");
   const [editing, setEditing] = useState<{ staffId: string; date: string } | null>(null);
 
@@ -156,6 +159,7 @@ export default function App() {
                 staff={staff}
                 patterns={patterns}
                 shiftData={shiftData}
+                closedDays={closedDays}
                 onCellClick={handleCellClick}
               />
             )}
@@ -178,6 +182,10 @@ export default function App() {
 
         {tab === "staff" && (
           <StaffManager staff={staff} onChange={handleStaffChange} />
+        )}
+
+        {tab === "holidays" && (
+          <HolidayManager closedDays={closedDays} onChange={setClosedDays} />
         )}
       </main>
 

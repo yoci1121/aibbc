@@ -22,3 +22,6 @@ export interface ShiftEntry {
 
 export type ShiftData = Record<string, Record<string, string>>;
 // staffId -> date -> patternId
+
+export type ClosedDays = Record<string, string>;
+// date (YYYY-MM-DD) -> label (例: "元旦", "創立記念日", "")
