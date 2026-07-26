@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>2D オビー（アスレチック）</title>
+<style>
+  body {
+    text-align: center;
+    background-color: #2c3e50;
+    color: #ecf0f1;
+    font-family: sans-serif;
+    margin: 0;
+    padding: 20px;
+  }
+  canvas {
+    background-color: #87CEEB; /* 空の水色 */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    border-radius: 8px;
+  }
+  p { font-size: 14px; color: #bdc3c7; }
+</style>
+</head>
+<body>
+
+<h2>アスレチックワールド <span id="worldDisplay">1</span></h2>
+<p>【操作】 左右移動: A / Dキー または 矢印キー ｜ ジャンプ: W / スペース / 上矢印キー</p>
+
+<canvas id="gameCanvas" width="800" height="400"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+// ゲーム設定
+const TILE_SIZE = 40;
+let currentWorld = 0;
+let spawnX = 50;
+let spawnY = 50;
+
+// プレイヤー設定
+const player = {
+  x: 50, y: 50, width: 28, height: 28,
+  dx: 0, dy: 0, speed: 4, jumpPower: -11,
+  gravity: 0.6, grounded: false
+};
+
+// キー入力管理
+const keys = { left: false, right: false, up: false };
+
+window.addEventListener("keydown", (e) => {
+  if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = true;
+  if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = true;
+  if (e.code === "ArrowUp" || e.code === "KeyW" || e.code === "Space") keys.up = true;
+});
+
+window.addEventListener("keyup", (e) => {
+  if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = false;
+  if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = false;
+  if (e.code === "ArrowUp" || e.code === "KeyW" || e.code === "Space") keys.up = false;
+});
+
+// ワールドマップデータ (20x10)
+// . = 空白, # = 地面, ^ = 赤い棒(即死), C = チェックポイント, G = ゴール, @ = スタート位置
+const worlds = [
+  // ワールド 1
+  [
+    "....................",
+    "....................",
+    "....................",
+    "...................G",
+    "...................#",
+    "............###....#",
+    "@......###^^###^^^^#",
+    "###..###############",
+    "###^^###############",
+    "####################"
+  ],
+  // ワールド 2
+  [
+    "....................",
+    "...................G",
+    "...................#",
+    ".........C......###.",
+    ".......###....##^^^.",
+    "@....##^^^..##^^^^^.",
+    "###^^#####^^########",
+    "###^^^^^^^^^^^^^^^^^",
+    "^^^^^^^^^^^^^^^^^^^^",
+    "^^^^^^^^^^^^^^^^^^^^"
+  ],
+  // ワールド 3
+  [
+    "...................G",
+    "...................#",
+    "............C...###.",
+    ".........###^###^^^.",
+    "......###^^^.^^^###.",
+    "@..###^^^...........",
+    "###^^^..............",
+    "^^^.................",
+    "....................",
+    "...................."
+  ]
+];
+
+let tiles = [];
+
+// マップの読み込み
+function loadWorld() {
+  document.getElementById("worldDisplay").innerText = currentWorld + 1;
+  tiles = [];
+  const map = worlds[currentWorld];
+
+  for (let row = 0; row < map.length; row++) {
+    for (let col = 0; col < map[row].length; col++) {
+      const type = map[row][col];
+      const x = col * TILE_SIZE;
+      const y = row * TILE_SIZE;
+
+      if (type === '@') {
+        spawnX = x; spawnY = y;
+        resetPlayer();
+      } else if (type !== '.') {
+        tiles.push({ x, y, size: TILE_SIZE, type, active: false });
+      }
+    }
+  }
+}
+
+function resetPlayer() {
+  player.x = spawnX;
+  player.y = spawnY;
+  player.dx = 0;
+  player.dy = 0;
+}
+
+// 衝突判定用関数
+function isCollide(p, t) {
+  return p.x < t.x + t.size && p.x + p.width > t.x &&
+         p.y < t.y + t.size && p.y + p.height > t.y;
+}
+
+// ゲームループ
+function update() {
+  // 左右移動
+  if (keys.left) player.dx = -player.speed;
+  else if (keys.right) player.dx = player.speed;
+  else player.dx = 0;
+
+  // X軸の移動と衝突
+  player.x += player.dx;
+  for (let tile of tiles) {
+    if (isCollide(player, tile)) {
+      if (tile.type === '^') { resetPlayer(); return; }
+      if (tile.type === 'C' && !tile.active) { tile.active = true; spawnX = tile.x; spawnY = tile.y - TILE_SIZE; }
+      if (tile.type === 'G') { nextWorld(); return; }
+      if (tile.type === '#') {
+        if (player.dx > 0) player.x = tile.x - player.width;
+        else if (player.dx < 0) player.x = tile.x + tile.size;
+      }
+    }
+  }
+
+  // 重力とジャンプ
+  player.dy += player.gravity;
+  if (keys.up && player.grounded) {
+    player.dy = player.jumpPower;
+    player.grounded = false;
+  }
+
+  // Y軸の移動と衝突
+  player.grounded = false;
+  player.y += player.dy;
+  for (let tile of tiles) {
+    if (isCollide(player, tile)) {
+      if (tile.type === '^') { resetPlayer(); return; }
+      if (tile.type === 'C' && !tile.active) { tile.active = true; spawnX = tile.x; spawnY = tile.y - TILE_SIZE; }
+      if (tile.type === 'G') { nextWorld(); return; }
+      if (tile.type === '#') {
+        if (player.dy > 0) {
+          player.y = tile.y - player.height;
+          player.dy = 0;
+          player.grounded = true;
+        } else if (player.dy < 0) {
+          player.y = tile.y + tile.size;
+          player.dy = 0;
+        }
+      }
+    }
+  }
+
+  // 画面外に落ちたらミス
+  if (player.y > canvas.height) resetPlayer();
+}
+
+function nextWorld() {
+  currentWorld++;
+  if (currentWorld >= worlds.length) {
+    alert("全ワールドクリア！おめでとうございます！");
+    currentWorld = 0;
+  }
+  loadWorld();
+}
+
+// 描画処理
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // タイルの描画
+  for (let tile of tiles) {
+    if (tile.type === '#') {
+      ctx.fillStyle = "#7f8c8d"; // 地面（グレー）
+    } else if (tile.type === '^') {
+      ctx.fillStyle = "#e74c3c"; // 赤い棒（ダメージ）
+    } else if (tile.type === 'C') {
+      ctx.fillStyle = tile.active ? "#2ecc71" : "#f1c40f"; // チェックポイント（取得で緑）
+    } else if (tile.type === 'G') {
+      ctx.fillStyle = "#3498db"; // ゴール（青）
+    }
+    ctx.fillRect(tile.x, tile.y, tile.size, tile.size);
+    ctx.strokeStyle = "#2c3e50";
+    ctx.strokeRect(tile.x, tile.y, tile.size, tile.size);
+  }
+
+  // プレイヤーの描画
+  ctx.fillStyle = "#ecf0f1";
+  ctx.fillRect(player.x, player.y, player.width, player.height);
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// 初期化して開始
+loadWorld();
+loop();
+</script>
+
+</body>
+</html>
